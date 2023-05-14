@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=brain_health
+POSTGRES_USER=FepaLncroxGaxcikopMoPSGMFVZYtJzv
+POSTGRES_PASSWORD=qPCaWgA6raB5NSyXJuSQRX7tRWr9osRnqzamWQE430zWVJ08aDsm7MX4bj0jKfL0
