@@ -8,13 +8,10 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from brain_health.users.managers import UserManager
-from brain_health.health.models import Therapist
 
 
 
 class User(AbstractUser):
-
-    # First and last name do not cover name patterns around the globe
     name = models.CharField(_("Name of User"), max_length=255)
     email = models.EmailField(_("email address"), unique=True)
     phone_number = models.CharField(max_length=20)
@@ -41,22 +38,43 @@ class User(AbstractUser):
         return reverse("users:detail", kwargs={"pk": self.id})
 
 
-@receiver(post_save, sender=User)
-class Therapist(models.Model):
-    user = models.OneToOneField(User, related_name="therapist_profile", on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=20)
-    profile_picture = models.ImageField(upload_to='therapist_profiles/')
-    degrees = models.TextField()
-    certifications = models.TextField()
-    hourly_rate = models.DecimalField(max_digits=6, decimal_places=2)
-    is_available = models.BooleanField(default=False)
-    is_approved = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.user.name
-
-
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
+class Therapist(models.Model):
+    user = models.OneToOneField(User, related_name="therapist_profile", on_delete=models.CASCADE)
+    degrees = models.TextField(null=True, blank=True)
+    certifications = models.TextField(null=True, blank=True)
+    hourly_rate = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    is_available = models.BooleanField(default=False)
+    is_approved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.email
+
+    def star(self):
+        ratings = self.feedbacks.all()
+        if ratings:
+            return round(sum(r.rating for r in ratings) / len(ratings), 2)
+        else:
+            return 0
+
+
+@receiver(post_save, sender=User)
+def create_therapist_profile(sender, instance, created, **kwargs):
+    if created and instance.is_therapist:
+        Therapist.objects.create(user=instance)
+
+
+
+
+class Feedback(models.Model):
+    user = models.ForeignKey(User, related_name="feedbacks", on_delete=models.CASCADE)
+    therapist = models.ForeignKey(Therapist, related_name="feedbacks", on_delete=models.CASCADE)
+    rating = models.IntegerField()
+    comment = models.TextField()
+
+    def __str__(self):
+        return f"{self.user.name} - {self.user.email}"

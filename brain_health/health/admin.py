@@ -1,14 +1,12 @@
 from django.contrib import admin
-
-
 from brain_health.health.models import (
     Relative,
     Appointment,
     Suggestion,
     Message,
     Mood,
-    Therapist,
 )
+from brain_health.users.models import Therapist,Feedback
 
 @admin.register(Relative)
 class RelativeAdmin(admin.ModelAdmin):
@@ -29,18 +27,24 @@ class MoodAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('message_text', 'relative', 'mood', 'is_urgent')
+    list_display = ('message_text', 'mood', 'is_urgent')
     list_filter = ('is_urgent',)
+
 
 class AppointmentAdmin(admin.StackedInline):
     model = Appointment
     extra = 1
 
+
+@admin.register(Feedback)
+class FeedBackAdmin(admin.ModelAdmin):
+    list_display = ('rating', 'comment', 'user', 'therapist')
+
+
 @admin.register(Therapist)
 class TherapistAdmin(admin.ModelAdmin):
-    list_display = ('name', 'email', 'phone_number', 'hourly_rate', 'is_available')
+    list_display = ('hourly_rate', 'is_available', 'is_approved', 'star')
     list_filter = ('is_available',)
-    search_fields = ('name', 'email', 'phone_number')
     inlines = [AppointmentAdmin]
 
 

@@ -5,7 +5,6 @@ from brain_health.health.models import (
     Suggestion,
     Message,
     Mood,
-    Therapist
 )
 
 class RelativeSerializer(serializers.ModelSerializer):
@@ -58,12 +57,6 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = ('id', 'relative', 'relative_name', 'mood',
                 'mood_name', 'message_text', 'is_urgent')
 
-
-class TherapistSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Therapist
-        fields = ('id', 'name', 'email', 'phone_number',
-                'profile_picture', 'degrees', 'certifications', 'hourly_rate', 'is_available')
 
 
 class AppointmentSerializer(serializers.ModelSerializer):

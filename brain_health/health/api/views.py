@@ -10,7 +10,6 @@ from .serializers import (
     MoodSerializer,
     SuggestionSerializer,
     MessageSerializer,
-    TherapistSerializer,
     AppointmentSerializer,
 )
 from brain_health.health.models import (
@@ -19,7 +18,6 @@ from brain_health.health.models import (
     Suggestion,
     Message,
     Mood,
-    Therapist
 )
 
 class RelativeList(

@@ -55,12 +55,4 @@ class Appointment(models.Model):
         return f"{self.user.username} - {self.therapist.name}"
 
 
-class Feedback(models.Model):
-    user = models.ForeignKey(User, related_name="feedbacks", on_delete=models.CASCADE)
-    therapist = models.ForeignKey(Therapist, related_name="feedbacks", on_delete=models.CASCADE)
-    rating = models.IntegerField()
-    comment = models.TextField()
-
-    def __str__(self):
-        return f"{self.user.username} - {self.therapist.name}"
 
