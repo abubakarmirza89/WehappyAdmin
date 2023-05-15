@@ -13,7 +13,6 @@ class UserSerializer(serializers.ModelSerializer):
                 "name",
                 "email",
                 "brain_health_score",
-                "preferred_therapist",
                 "profile_picture",
                 "phone_number",
                 "url"

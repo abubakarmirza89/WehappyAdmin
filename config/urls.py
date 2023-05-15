@@ -3,7 +3,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from django.views import defaults as default_views
-from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -21,15 +20,13 @@ urlpatterns += [
     # API base url
     path("api/", include("config.api_router")),
     path("api/", include("brain_health.users.api.urls", namespace="users")),
+    path("api/", include("brain_health.health.api.urls", namespace="health")),
     # DRF auth token
     # path('api/', include('djoser.urls')),
     # path('api/', include('djoser.urls.authtoken')),
     path("auth-token/", obtain_auth_token),
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
-    path(
-        "api/docs/",
-        SpectacularSwaggerView.as_view(url_name="api-schema"),
-        name="api-docs",
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="api-schema"), name="api-docs",
     ),
 ]
 
