@@ -1,43 +1,105 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.messages.views import SuccessMessageMixin
-from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
-from django.views.generic import DetailView, RedirectView, UpdateView
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.generics import CreateAPIView, GenericAPIView, ListAPIView
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
+from .serializers import UserSerializer, UserSignupSerializer, LoginSerializer, TherapistSerializer, FeedbackSerializer
+from brain_health.users.models import Therapist, Feedback
 
 User = get_user_model()
 
 
-class UserDetailView(LoginRequiredMixin, DetailView):
-    model = User
-    slug_field = "id"
-    slug_url_kwarg = "id"
+class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericViewSet):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    permission_class = [IsAuthenticated]
+    lookup_field = "pk"
+
+    def get_queryset(self, *args, **kwargs):
+        if not self.request.user.is_superuser:
+            try:
+                return self.queryset.get(id=self.request.user.id)
+            except User.DoesNotExist:
+                pass
+        else:
+            return self.queryset.all()
 
 
-user_detail_view = UserDetailView.as_view()
+
+    @action(detail=False)
+    def me(self, request):
+        serializer = UserSerializer(request.user, context={"request": request})
+        return Response(status=status.HTTP_200_OK, data=serializer.data)
 
 
-class UserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
-    model = User
-    fields = ["name"]
-    success_message = _("Information successfully updated")
+class LoginAPIView(GenericAPIView):
+    serializer_class = LoginSerializer
+    permission_class = [AllowAny]
 
-    def get_success_url(self):
-        assert self.request.user.is_authenticated  # for mypy to know that the user is authenticated
-        return self.request.user.get_absolute_url()
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    def get_object(self):
-        return self.request.user
+        email = serializer.validated_data.get('email')
+        password = serializer.validated_data.get('password')
+
+        user = authenticate(request, email=email, password=password)
+        if not user:
+            return Response({'detail': 'Invalid email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'success': "login successfully",
+            'token': token.key,
+            'user': LoginSerializer(user).data
+        }, status=status.HTTP_200_OK)
 
 
-user_update_view = UserUpdateView.as_view()
+
+class UserSignupView(CreateAPIView):
+    model = User.objects.all()
+    serializer_class = UserSignupSerializer
+    permission_class = [AllowAny]
 
 
-class UserRedirectView(LoginRequiredMixin, RedirectView):
-    permanent = False
 
-    def get_redirect_url(self):
-        return reverse("users:detail", kwargs={"pk": self.request.user.pk})
+class TherapistListViewSet(ListAPIView):
+    serializer_class = TherapistSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Therapist.objects.filter(is_available=True)
 
 
-user_redirect_view = UserRedirectView.as_view()
+
+class TherapistDetailViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
+    serializer_class = TherapistSerializer
+    queryset = Therapist.objects.all()
+    permission_class = [IsAuthenticated]
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        return Therapist.objects.filter(user=self.request.user, is_available=True)
+
+
+
+class FeedbackCreateView(CreateAPIView):
+    serializer_class = FeedbackSerializer
+    queryset = Feedback.objects.all()
+    permission_class = [IsAuthenticated]
+    lookup_field = "pk"
+
+    def perform_create(self, serializer):
+        therapist_id = self.kwargs.get("pk")
+        therapist = Therapist.objects.get(pk=therapist_id)
+        serializer.save(user=self.request.user, therapist=therapist)
+
+
+
+

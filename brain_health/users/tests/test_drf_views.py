@@ -1,7 +1,7 @@
 import pytest
 from rest_framework.test import APIRequestFactory
 
-from brain_health.users.api.views import UserViewSet
+from brain_health.users.views import UserViewSet
 from brain_health.users.models import User
 
 

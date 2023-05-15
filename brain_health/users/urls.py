@@ -1,14 +1,12 @@
+from brain_health.users.views import UserSignupView, LoginAPIView, TherapistListViewSet, FeedbackCreateView
 from django.urls import path
 
-from brain_health.users.views import (
-    user_detail_view,
-    user_redirect_view,
-    user_update_view,
-)
-
 app_name = "users"
+
 urlpatterns = [
-    path("~redirect/", view=user_redirect_view, name="redirect"),
-    path("~update/", view=user_update_view, name="update"),
-    path("<int:pk>/", view=user_detail_view, name="detail"),
+    path("signup/", UserSignupView.as_view(), name="api-signup"),
+    path("login/", LoginAPIView.as_view(), name="api-login"),
+    path("therapists/", TherapistListViewSet.as_view(), name="api-therapist"),
+    path("feedback/<int:pk>/", FeedbackCreateView.as_view(), name="api-feedback"),
+
 ]
