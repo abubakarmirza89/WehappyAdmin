@@ -1,5 +1,5 @@
+# Brain Health
 
-# brain_health
 # WehappyAdmin
 
 Brain Health
@@ -7,7 +7,7 @@ Brain Health
 [![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
 [![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-## Notes about development
+## Notes about developer
 
 Eslam Essam Feel free to contact me for any questions:
 
@@ -15,6 +15,7 @@ Eslam Essam Feel free to contact me for any questions:
 My Github: https://github.com/EslamEs1
 Gmail: eslamdeveloper1@gmail.com
 ```
+
 ## Settings
 
 Moved to [settings](http://cookiecutter-django.readthedocs.io/en/latest/settings.html).
@@ -90,5 +91,3 @@ celery -A config.celery_app worker -B -l info
 ### Docker
 
 See detailed [cookiecutter-django Docker documentation](http://cookiecutter-django.readthedocs.io/en/latest/deployment-with-docker.html).
-
-

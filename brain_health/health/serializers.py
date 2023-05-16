@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from brain_health.health.models import Relative, Appointment, Suggestion, Message, Mood
+
+from brain_health.health.models import Mood, Relative, Suggestion
 
 
 class RelativeSerializer(serializers.ModelSerializer):
@@ -24,11 +25,11 @@ class MoodSerializer(serializers.ModelSerializer):
 
 
 class SuggestionSerializer(serializers.ModelSerializer):
-    mood_name = serializers.ReadOnlyField(source='mood.name')
+    mood_name = serializers.ReadOnlyField(source="mood.name")
 
     class Meta:
         model = Suggestion
-        fields = ["id","mood_name", "suggestion_text"]
+        fields = ["id", "mood_name", "suggestion_text"]
 
 
 # class MessageSerializer(serializers.ModelSerializer):
@@ -38,12 +39,3 @@ class SuggestionSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = Message
 #         fields = "__all__"
-
-
-class AppointmentSerializer(serializers.ModelSerializer):
-    therapist_name = serializers.ReadOnlyField(source='therapist.name')
-    user_name = serializers.ReadOnlyField(source='user.first_name')
-
-    class Meta:
-        model = Appointment
-        fields = "__all__"

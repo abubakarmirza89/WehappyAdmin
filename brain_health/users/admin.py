@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.contrib.auth import admin as auth_admin
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from .models import Brain_Health_Score
+
 from brain_health.users.forms import UserAdminChangeForm, UserAdminCreationForm
+
+from .models import Appointment, Brain_Health_Score, Feedback, Send_To_Relative, Suggestion_Therapist, Therapist
 
 User = get_user_model()
 
@@ -14,7 +16,16 @@ class UserAdmin(auth_admin.UserAdmin):
     add_form = UserAdminCreationForm
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        (_("Personal info"), {"fields": ("name","date_of_birth",)}),
+        (
+            _("Personal info"),
+            {
+                "fields": (
+                    "name",
+                    "date_of_birth",
+                    "is_therapist",
+                )
+            },
+        ),
         (
             _("Permissions"),
             {
@@ -32,6 +43,7 @@ class UserAdmin(auth_admin.UserAdmin):
     list_display = ["email", "name", "is_superuser", "is_active", "is_therapist", "brain_health_score"]
     search_fields = ["name"]
     ordering = ["id"]
+    list_editable = ["is_active"]
     add_fieldsets = (
         (
             None,
@@ -43,5 +55,32 @@ class UserAdmin(auth_admin.UserAdmin):
     )
 
 
-
 admin.site.register(Brain_Health_Score)
+
+
+@admin.register(Send_To_Relative)
+class Send_To_RelativeAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Suggestion_Therapist)
+class Suggestion_TherapistAdmin(admin.ModelAdmin):
+    pass
+
+
+class AppointmentAdmin(admin.StackedInline):
+    model = Appointment
+    extra = 1
+
+
+@admin.register(Feedback)
+class FeedBackAdmin(admin.ModelAdmin):
+    list_display = ("rating", "comment", "user", "therapist")
+    readonly_fields = ["rating", "comment", "therapist", "user"]
+
+
+@admin.register(Therapist)
+class TherapistAdmin(admin.ModelAdmin):
+    list_display = ("user", "hourly_rate", "is_available", "star")
+    list_filter = ("is_available",)
+    inlines = [AppointmentAdmin]
