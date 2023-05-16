@@ -19,6 +19,7 @@ class User(AbstractUser):
     brain_health_score = models.IntegerField(default=0)
     date_of_birth = models.DateField(null=True, blank=True)
     is_therapist = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
     first_name = None  # type: ignore
     last_name = None  # type: ignore
     username = None  # type: ignore

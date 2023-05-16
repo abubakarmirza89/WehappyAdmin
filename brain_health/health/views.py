@@ -1,7 +1,8 @@
 from rest_framework import generics, mixins, viewsets
 from rest_framework import permissions
 from .tasks import send_email_task
-
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 
 from .serializers import (
     RelativeSerializer,
@@ -15,6 +16,7 @@ from brain_health.health.models import (
     Suggestion,
     Message,
     Mood,
+    SendMail,
 )
 
 class RelativeList(
@@ -51,24 +53,27 @@ class SuggestionByMoodView(generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        mood_name = self.request.query_params.get('mood')
-        mood = Mood.objects.filter(name__iexact=mood_name).first()
-        if not mood:
-            return Suggestion.objects.none()
+        mood_name = self.request.query_params.get('mood', '').lower()
+        mood = get_object_or_404(Mood, name__iexact=mood_name)
 
-        suggestions = Suggestion.objects.filter(mood=mood).order_by('?')
-        if not suggestions.exists():
-            return Suggestion.objects.none()
+        suggestion = Suggestion.objects.filter(mood=mood).order_by('?').first()
+        if not suggestion:
+            return []
 
         message = Message.objects.filter(mood=mood).order_by('?').first()
         if message:
-            suggestion_text = suggestions.first().suggestion_text
+            suggestion_text = suggestion.suggestion_text
             message_text = message.message_text
             is_urgent = message.is_urgent
             user = self.request.user
-            relatives = Relative.objects.filter(user=user)
+            relatives = user.relative.distinct("name", "email")
             for relative in relatives:
-                message_body = f"Hey {relative.name}, {user.name} has been feeling {mood.name.lower()}. Here's a suggestion: {suggestion_text}\n\n{message_text}\n\nIs urgent: {is_urgent}\n\nThanks,"
-                send_email_task.delay('Mood', message_body, [relative.email])
+                message_body = f"Hey {relative.name} Mr {user.name} has been feeling {mood.name}.\n\n Here's a suggestion: {suggestion_text}\n\n{message_text}\n\nIs urgent: {is_urgent}\n\nThanks,"
+                send_email_task.delay('Mood', message_body, ["brainhealth@gmail.com"])
+                msg = f"{message_body} to {[relative.email]} from 'brainhealth@gmail.com'"
+                SendMail.objects.create(message_text=msg)
 
-        return suggestions
+        return [suggestion]
+
+
+

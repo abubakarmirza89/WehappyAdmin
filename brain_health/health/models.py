@@ -17,6 +17,7 @@ class Relative(models.Model):
 
 class Mood(models.Model):
     name = models.CharField(max_length=100)
+    img_emoji = models.ImageField(upload_to="mood/emoji")
     score = models.IntegerField()
 
     def __str__(self):
@@ -26,8 +27,8 @@ class Mood(models.Model):
 class Suggestion(models.Model):
     mood = models.ForeignKey(Mood, related_name="suggestion", on_delete=models.CASCADE)
     suggestion_text = models.TextField()
-    from_age = models.IntegerField()
-    to_age = models.IntegerField()
+    # from_age = models.IntegerField()
+    # to_age = models.IntegerField()
 
     def __str__(self):
         return self.suggestion_text
@@ -37,6 +38,18 @@ class Message(models.Model):
     mood = models.ForeignKey(Mood, on_delete=models.CASCADE)
     message_text = models.TextField()
     is_urgent = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name="Admin Message"
+        verbose_name_plural="Admin Messages"
+
+    def __str__(self):
+        return self.message_text
+
+
+
+class SendMail(models.Model):
+    message_text = models.TextField()
 
     def __str__(self):
         return self.message_text

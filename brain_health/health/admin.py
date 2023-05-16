@@ -5,6 +5,7 @@ from brain_health.health.models import (
     Suggestion,
     Message,
     Mood,
+    SendMail
 )
 from brain_health.users.models import Therapist,Feedback
 
@@ -30,6 +31,11 @@ class MessageAdmin(admin.ModelAdmin):
     list_display = ('message_text', 'mood', 'is_urgent')
     list_filter = ('is_urgent',)
 
+
+
+@admin.register(SendMail)
+class SendMailAdmin(admin.ModelAdmin):
+    pass
 
 class AppointmentAdmin(admin.StackedInline):
     model = Appointment
