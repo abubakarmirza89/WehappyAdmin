@@ -1,6 +1,6 @@
-<<<<<<< HEAD
 
 # brain_health
+# WehappyAdmin
 
 Brain Health
 
@@ -90,6 +90,5 @@ celery -A config.celery_app worker -B -l info
 ### Docker
 
 See detailed [cookiecutter-django Docker documentation](http://cookiecutter-django.readthedocs.io/en/latest/deployment-with-docker.html).
-=======
-# WehappyAdmin
->>>>>>> dec946a588d26b5062a7a3b91765314e77c9f6cb
+
+
