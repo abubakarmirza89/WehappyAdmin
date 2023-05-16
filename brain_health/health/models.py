@@ -23,6 +23,15 @@ class Mood(models.Model):
     def __str__(self):
         return self.name
 
+    def calculate_brain_health(self):
+        max_score = 100  # Maximum possible score
+        if self.score is None or self.score <= 0:
+            return 0
+        elif self.score >= max_score:
+            return 100
+        else:
+            return (self.score / max_score) * 100
+
 
 class Suggestion(models.Model):
     mood = models.ForeignKey(Mood, related_name="suggestion", on_delete=models.CASCADE)

@@ -22,7 +22,7 @@ class SuggestionAdmin(admin.StackedInline):
 
 @admin.register(Mood)
 class MoodAdmin(admin.ModelAdmin):
-    list_display = ('name', 'score')
+    list_display = ('name', 'score', "calculate_brain_health")
     inlines = [SuggestionAdmin]
 
 
@@ -49,7 +49,7 @@ class FeedBackAdmin(admin.ModelAdmin):
 
 @admin.register(Therapist)
 class TherapistAdmin(admin.ModelAdmin):
-    list_display = ('hourly_rate', 'is_available', 'is_approved', 'star')
+    list_display = ('hourly_rate', 'is_available', 'is_approved','star')
     list_filter = ('is_available',)
     inlines = [AppointmentAdmin]
 

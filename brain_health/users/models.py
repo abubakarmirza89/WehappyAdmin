@@ -16,7 +16,6 @@ class User(AbstractUser):
     email = models.EmailField(_("email address"), unique=True)
     phone_number = models.CharField(max_length=20)
     profile_picture = models.ImageField(upload_to='user_profiles/', null=True, blank=True)
-    brain_health_score = models.IntegerField(default=0)
     date_of_birth = models.DateField(null=True, blank=True)
     is_therapist = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
@@ -37,6 +36,13 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"pk": self.id})
+
+    def brain_health_score(self):
+        ratings = self.brain_score.all()
+        if ratings:
+            return round(sum(r.rating for r in ratings) / len(ratings), 2)
+        else:
+            return 0
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -79,3 +85,11 @@ class Feedback(models.Model):
 
     def __str__(self):
         return f"{self.user.name} - {self.user.email}"
+
+
+class Brain_Health_Score(models.Model):
+    user = models.ForeignKey(User, related_name="brain_score", on_delete=models.CASCADE)
+    rating = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.user.name} - {self.rating}"

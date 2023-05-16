@@ -28,7 +28,7 @@ class SuggestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Suggestion
-        fields = "__all__"
+        fields = ["id","mood_name", "suggestion_text"]
 
 
 # class MessageSerializer(serializers.ModelSerializer):
