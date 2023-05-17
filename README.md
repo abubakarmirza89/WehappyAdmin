@@ -9,11 +9,9 @@ Brain Health
 
 ## Notes about developer
 
-Eslam Essam Feel free to contact me for any questions:
 
 ```bash
-My Github: https://github.com/EslamEs1
-Gmail: eslamdeveloper1@gmail.com
+
 ```
 
 ## Settings
