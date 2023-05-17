@@ -12,38 +12,71 @@ class FeedbackSerializer(serializers.ModelSerializer):
         fields = ("rating", "comment")
 
 
-class TherapistSerializer(serializers.ModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="api:therapist-detail", lookup_field="pk")
-    create_feedback = serializers.HyperlinkedIdentityField(view_name="users:api-feedback", lookup_field="pk")
-    create_appointment = serializers.HyperlinkedIdentityField(
-        view_name="users:api-create-appointment", lookup_field="pk"
-    )
-    feedbacks = FeedbackSerializer(many=True)
-
+class TherapistProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Therapist
-        fields = "__all__"
+        fields = (
+            "degrees",
+            "certifications",
+            "card_id",
+            "hourly_rate",
+            "is_available",
+        )
+        extra_kwargs = {
+            "degrees": {"required": False},
+            "certifications": {"required": False},
+            "card_id": {"required": False},
+            "hourly_rate": {"required": False},
+            "is_available": {"required": False},
+        }
 
 
 class UserSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name="api:user-detail", lookup_field="pk")
+    create_feedback = serializers.HyperlinkedIdentityField(
+        view_name="users:api-feedback", lookup_field="pk", read_only=True
+    )
+    create_appointment = serializers.HyperlinkedIdentityField(
+        view_name="users:api-create-appointment", lookup_field="pk", read_only=True
+    )
+    therapist_profile = TherapistProfileSerializer(required=False)
+    feedback_therapist = FeedbackSerializer(many=True, read_only=True)
 
     class Meta:
         model = User
-        fields = [
+        fields = (
             "name",
             "email",
-            "brain_health_score",
             "profile_picture",
             "phone_number",
-            "is_therapist",
+            "date_of_birth",
             "url",
-        ]
+            "create_feedback",
+            "create_appointment",
+            "therapist_profile",
+            "feedback_therapist",
+        )
 
-    def get_fields(self, *args, **kwargs):
-        fields = super().get_fields(*args, **kwargs)
-        fields["therapist_profile"] = TherapistSerializer(read_only=True)
-        return fields
+    def to_representation(self, instance):
+        if not instance.is_therapist:
+            self.fields.pop("create_feedback")
+            self.fields.pop("create_appointment")
+            self.fields.pop("feedback_therapist")
+            self.fields.pop("therapist_profile")
+
+        return super().to_representation(instance)
+
+    def update(self, instance, validated_data):
+        therapist_profile_data = validated_data.pop("therapist_profile", None)
+        instance = super().update(instance, validated_data)
+
+        if therapist_profile_data and instance.is_therapist:
+            therapist_profile_serializer = self.fields["therapist_profile"]
+            therapist_profile_instance = instance.therapist_profile
+
+            therapist_profile_serializer.update(therapist_profile_instance, therapist_profile_data)
+
+        return instance
 
 
 class LoginSerializer(serializers.Serializer):

@@ -68,19 +68,18 @@ class Suggestion_TherapistAdmin(admin.ModelAdmin):
     pass
 
 
-class AppointmentAdmin(admin.StackedInline):
-    model = Appointment
-    extra = 1
+@admin.register(Appointment)
+class AppointmentAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(Feedback)
 class FeedBackAdmin(admin.ModelAdmin):
     list_display = ("rating", "comment", "user", "therapist")
-    readonly_fields = ["rating", "comment", "therapist", "user"]
+    # readonly_fields = ["rating", "comment", "therapist", "user"]
 
 
 @admin.register(Therapist)
 class TherapistAdmin(admin.ModelAdmin):
     list_display = ("user", "hourly_rate", "is_available", "star")
     list_filter = ("is_available",)
-    inlines = [AppointmentAdmin]

@@ -8,14 +8,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from brain_health.users.models import Appointment, Feedback, Therapist
+from brain_health.users.models import Appointment, Feedback
 
 from .serializers import (
     AppointmentTherapistSerializer,
     AppointmentUserSerializer,
     FeedbackSerializer,
     LoginSerializer,
-    TherapistSerializer,
     UserSerializer,
     UserSignupSerializer,
 )
@@ -32,7 +31,7 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
     def get_queryset(self, *args, **kwargs):
         if not self.request.user.is_superuser:
             try:
-                return self.queryset.get(id=self.request.user.id)
+                return self.queryset.filter(id=self.request.user.id)
             except User.DoesNotExist:
                 pass
         else:
@@ -74,21 +73,11 @@ class UserSignupView(CreateAPIView):
 
 
 class TherapistListViewSet(ListAPIView):
-    serializer_class = TherapistSerializer
+    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Therapist.objects.filter(is_available=True)
-
-
-class TherapistDetailViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
-    serializer_class = TherapistSerializer
-    queryset = Therapist.objects.all()
-    permission_class = [IsAuthenticated]
-    lookup_field = "pk"
-
-    def get_queryset(self):
-        return Therapist.objects.filter(user=self.request.user)
+        return User.objects.filter(is_therapist=True, is_active=True, therapist_profile__is_available=True)
 
 
 class FeedbackCreateView(CreateAPIView):
@@ -99,7 +88,7 @@ class FeedbackCreateView(CreateAPIView):
 
     def perform_create(self, serializer):
         therapist_id = self.kwargs.get("pk")
-        therapist = Therapist.objects.get(pk=therapist_id)
+        therapist = User.objects.get(pk=therapist_id)
         serializer.save(user=self.request.user, therapist=therapist)
 
 
@@ -110,7 +99,7 @@ class AppointmentViewSet(RetrieveModelMixin, ListModelMixin, DestroyModelMixin, 
     def get_queryset(self):
         user = self.request.user
         if user.is_therapist:
-            therapist = Therapist.objects.get(user=user)
+            therapist = User.objects.get(pk=user.id)
             return Appointment.objects.filter(therapist=therapist)
         else:
             return Appointment.objects.filter(user=user)
@@ -129,5 +118,5 @@ class CreateAppointmentViewSet(CreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         appointment_id = self.kwargs.get("pk")
-        therapist = Therapist.objects.get(pk=appointment_id)
+        therapist = User.objects.get(pk=appointment_id)
         serializer.save(user=user, therapist=therapist)
