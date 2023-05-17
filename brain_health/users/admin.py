@@ -5,7 +5,15 @@ from django.utils.translation import gettext_lazy as _
 
 from brain_health.users.forms import UserAdminChangeForm, UserAdminCreationForm
 
-from .models import Appointment, Brain_Health_Score, Feedback, Send_To_Relative, Suggestion_Therapist, Therapist
+from .models import (
+    Appointment,
+    Brain_Health_Score,
+    Feedback,
+    Send_To_Relative,
+    Suggestion_Therapist,
+    Therapist,
+    UserHistory,
+)
 
 User = get_user_model()
 
@@ -81,5 +89,10 @@ class FeedBackAdmin(admin.ModelAdmin):
 
 @admin.register(Therapist)
 class TherapistAdmin(admin.ModelAdmin):
-    list_display = ("user", "hourly_rate", "is_available", "star")
+    list_display = ("user", "hourly_rate", "is_available")
     list_filter = ("is_available",)
+
+
+@admin.register(UserHistory)
+class UserHistoryAdmin(admin.ModelAdmin):
+    pass

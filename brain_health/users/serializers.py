@@ -1,15 +1,19 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from brain_health.users.models import Appointment, Feedback, Notification, Therapist
+from brain_health.users.models import Appointment, Feedback, Notification, Therapist, UserHistory
 
 User = get_user_model()
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    therapist = serializers.StringRelatedField(read_only=True)
+    appointment = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Feedback
-        fields = ("rating", "comment")
+        fields = "__all__"
 
 
 class TherapistProfileSerializer(serializers.ModelSerializer):
@@ -31,6 +35,16 @@ class TherapistProfileSerializer(serializers.ModelSerializer):
         }
 
 
+class UserHistorySerializer(serializers.ModelSerializer):
+    appointment = serializers.PrimaryKeyRelatedField(read_only=True)
+    user = serializers.StringRelatedField(read_only=True)
+    therapist = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = UserHistory
+        fields = "__all__"
+
+
 class UserSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name="api:user-detail", lookup_field="pk")
     create_feedback = serializers.HyperlinkedIdentityField(
@@ -41,30 +55,44 @@ class UserSerializer(serializers.ModelSerializer):
     )
     therapist_profile = TherapistProfileSerializer(required=False)
     feedback_therapist = FeedbackSerializer(many=True, read_only=True)
+    feedbacks = FeedbackSerializer(many=True, read_only=True)
+    therapist_history = UserHistorySerializer(many=True, read_only=True)
+    user_history = UserHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = User
         fields = (
+            "url",
             "name",
             "email",
             "profile_picture",
             "phone_number",
             "date_of_birth",
-            "url",
             "create_feedback",
             "create_appointment",
+            "user_history",
+            "therapist_history",
             "therapist_profile",
             "feedback_therapist",
+            "feedbacks",
         )
 
     def to_representation(self, instance):
-        if not instance.is_therapist:
-            self.fields.pop("create_feedback")
-            self.fields.pop("create_appointment")
-            self.fields.pop("feedback_therapist")
-            self.fields.pop("therapist_profile")
+        data = super().to_representation(instance)
 
-        return super().to_representation(instance)
+        if not instance.is_therapist:
+            fields_to_exclude = [
+                "create_feedback",
+                "create_appointment",
+                "feedback_therapist",
+                "therapist_profile",
+                "therapist_history",
+            ]
+        else:
+            fields_to_exclude = ["user_history", "feedbacks"]
+
+        data = {key: value for key, value in data.items() if key not in fields_to_exclude}
+        return data
 
     def update(self, instance, validated_data):
         therapist_profile_data = validated_data.pop("therapist_profile", None)
@@ -104,10 +132,18 @@ class UserSignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Email already exists.")
 
 
-class AppointmentTherapistSerializer(serializers.ModelSerializer):
+class UserAppointmentSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name="api:appointment-detail", lookup_field="pk")
-    user_name = serializers.ReadOnlyField(source="user.name")
-    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    therapist = serializers.ReadOnlyField(source="therapist.user.name")
+
+    class Meta:
+        model = Appointment
+        fields = ["id", "url", "therapist", "date", "time", "location", "reason", "created_at"]
+
+
+class TherapistAppointmentSerializer(serializers.ModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name="api:appointment-detail", lookup_field="pk")
+    user = serializers.ReadOnlyField(source="user.name")
     date = serializers.ReadOnlyField()
     time = serializers.ReadOnlyField()
     location = serializers.ReadOnlyField()
@@ -115,31 +151,4 @@ class AppointmentTherapistSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = (
-            "id",
-            "user_name",
-            "date",
-            "time",
-            "location",
-            "reason",
-            "is_confirmed",
-            "created_at",
-            "url",
-        )
-
-
-class AppointmentUserSerializer(serializers.ModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name="api:appointment-detail", lookup_field="pk")
-    therapist_name = serializers.ReadOnlyField(source="therapist.user.name")
-
-    class Meta:
-        model = Appointment
-        fields = (
-            "id",
-            "therapist_name",
-            "date",
-            "time",
-            "location",
-            "reason",
-            "url",
-        )
+        fields = ["id", "url", "user", "date", "time", "location", "reason", "status", "created_at"]

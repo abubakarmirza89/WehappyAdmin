@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.authtoken.models import Token
@@ -28,17 +28,15 @@ class User(AbstractUser):
 
     objects = UserManager()
 
-    def get_absolute_url(self) -> str:
-        """Get URL for user's detail view.
-
-        Returns:
-            str: URL for user detail.
-
-        """
-        return reverse("users:detail", kwargs={"pk": self.id})
-
     def brain_health_score(self):
         ratings = self.brain_score.all()
+        if ratings:
+            return round(sum(r.rating for r in ratings) / len(ratings), 2)
+        else:
+            return 0
+
+    def star(self):
+        ratings = self.feedback_therapist.all()
         if ratings:
             return round(sum(r.rating for r in ratings) / len(ratings), 2)
         else:
@@ -62,13 +60,6 @@ class Therapist(models.Model):
     def __str__(self):
         return self.user.email
 
-    def star(self):
-        ratings = self.feedbacks.all()
-        if ratings:
-            return round(sum(r.rating for r in ratings) / len(ratings), 2)
-        else:
-            return 0
-
 
 @receiver(post_save, sender=User)
 def create_therapist_profile(sender, instance, created, **kwargs):
@@ -83,7 +74,16 @@ class Appointment(models.Model):
     time = models.TimeField()
     location = models.CharField(max_length=200)
     reason = models.CharField(max_length=200)
-    is_confirmed = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=20,
+        choices=(
+            ("BOOKED", "Booked"),
+            ("IN_PROGRESS", "In Progress"),
+            ("COMPLETED", "Completed"),
+            ("CANCELED", "Canceled"),
+        ),
+        default="BOOKED",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -94,7 +94,7 @@ class Appointment(models.Model):
 
 
 @receiver(post_save, sender=Appointment)
-def create_notification_therapist(sender, instance, created, **kwargs):
+def create_notification(sender, instance, created, **kwargs):
     if created:
         Notification.objects.create(
             recipient=instance.therapist,
@@ -104,14 +104,20 @@ def create_notification_therapist(sender, instance, created, **kwargs):
 
 
 @receiver(post_save, sender=Appointment)
-def create_notification_user(sender, instance, **kwargs):
-    if instance.is_confirmed:
+def update_notification_status(sender, instance, **kwargs):
+    if instance.status == "CANCELED":
         Notification.objects.create(
             recipient=instance.user,
-            verb=f"Your appointment with {instance.therapist.name} has been confirmed",
+            verb=f"Your appointment with {instance.therapist.name} has been canceled",
             created_at=timezone.now(),
             read=True,
         )
+
+
+@receiver(post_save, sender=Appointment)
+def create_user_history(sender, instance, created, **kwargs):
+    if created and instance.status == "BOOKED":
+        UserHistory.objects.create(user=instance.user, therapist=instance.therapist, appointment=instance)
 
 
 class Notification(models.Model):
@@ -130,16 +136,26 @@ class Notification(models.Model):
 class Feedback(models.Model):
     user = models.ForeignKey(User, related_name="feedbacks", on_delete=models.CASCADE)
     therapist = models.ForeignKey(User, related_name="feedback_therapist", on_delete=models.CASCADE)
-    rating = models.IntegerField()
+    appointment = models.OneToOneField(Appointment, related_name="review", on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     comment = models.TextField()
 
     def __str__(self):
         return f"{self.user.name} - {self.user.email}"
 
 
+class UserHistory(models.Model):
+    user = models.ForeignKey(User, related_name="user_history", on_delete=models.CASCADE)
+    therapist = models.ForeignKey(User, on_delete=models.CASCADE, related_name="therapist_history")
+    appointment = models.OneToOneField(Appointment, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user.name} - {self.therapist.name}"
+
+
 class Brain_Health_Score(models.Model):
     user = models.ForeignKey(User, related_name="brain_score", on_delete=models.CASCADE)
-    rating = models.IntegerField()
+    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(100)])
 
     def __str__(self):
         return f"{self.user.name} - {self.rating}"

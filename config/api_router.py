@@ -12,6 +12,5 @@ router.register("users", UserViewSet)
 router.register("appointment", AppointmentViewSet)
 router.register("notifications", NotificationViewSet, basename="notification")
 
-
 app_name = "api"
 urlpatterns = router.urls
