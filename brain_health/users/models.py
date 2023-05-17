@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.authtoken.models import Token
 
@@ -90,6 +91,40 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.user.name} - {self.therapist.name}"
+
+
+@receiver(post_save, sender=Appointment)
+def create_notification_therapist(sender, instance, created, **kwargs):
+    if created:
+        Notification.objects.create(
+            recipient=instance.therapist,
+            verb=f"You have a new appointment with {instance.user.name}",
+            created_at=timezone.now(),
+        )
+
+
+@receiver(post_save, sender=Appointment)
+def create_notification_user(sender, instance, **kwargs):
+    if instance.is_confirmed:
+        Notification.objects.create(
+            recipient=instance.user,
+            verb=f"Your appointment with {instance.therapist.name} has been confirmed",
+            created_at=timezone.now(),
+            read=True,
+        )
+
+
+class Notification(models.Model):
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    verb = models.CharField(max_length=255)
+    read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.recipient.name} - {self.verb}"
 
 
 class Feedback(models.Model):

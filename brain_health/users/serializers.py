@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from brain_health.users.models import Appointment, Feedback, Therapist
+from brain_health.users.models import Appointment, Feedback, Notification, Therapist
 
 User = get_user_model()
 
@@ -77,6 +77,12 @@ class UserSerializer(serializers.ModelSerializer):
             therapist_profile_serializer.update(therapist_profile_instance, therapist_profile_data)
 
         return instance
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ("id", "recipient", "verb", "created_at", "read")
 
 
 class LoginSerializer(serializers.Serializer):

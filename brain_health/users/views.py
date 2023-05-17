@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate, get_user_model
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView, GenericAPIView, ListAPIView
@@ -8,13 +8,14 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from brain_health.users.models import Appointment, Feedback
+from brain_health.users.models import Appointment, Feedback, Notification
 
 from .serializers import (
     AppointmentTherapistSerializer,
     AppointmentUserSerializer,
     FeedbackSerializer,
     LoginSerializer,
+    NotificationSerializer,
     UserSerializer,
     UserSignupSerializer,
 )
@@ -120,3 +121,11 @@ class CreateAppointmentViewSet(CreateAPIView):
         appointment_id = self.kwargs.get("pk")
         therapist = User.objects.get(pk=appointment_id)
         serializer.save(user=user, therapist=therapist)
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = NotificationSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Notification.objects.filter(recipient=user)
