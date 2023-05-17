@@ -9,7 +9,6 @@ Brain Health
 
 ## Notes about developer
 
-Eslam Essam Feel free to contact me for any questions:
 
 ```bash
 
