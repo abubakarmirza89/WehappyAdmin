@@ -63,8 +63,8 @@ class AppointmentViewSet(RetrieveModelMixin, ListModelMixin, DestroyModelMixin, 
         instance = serializer.instance
         if self.request.user.is_therapist:
             status = serializer.validated_data.get("status")
-            if status in ["completed", "cancelled"]:
-                if status == "cancelled":
+            if status in ["COMPLETED", "CANCELED"]:
+                if status == "CANCELED":
                     # Calculate the refund amount (80%)
                     total_amount = instance.hourly_rate * instance.duration
                     refund_amount = total_amount * Decimal("0.8")
@@ -82,7 +82,7 @@ class AppointmentViewSet(RetrieveModelMixin, ListModelMixin, DestroyModelMixin, 
                         description="Cancellation fee",
                     )
 
-                if status == "completed":
+                if status == "COMPLETED":
                     # Calculate the charge amount (including 10% additional fee)
                     total_amount = instance.hourly_rate * instance.duration
                     charge_amount = total_amount * Decimal("1.1")
