@@ -79,6 +79,7 @@ class Appointment(models.Model):
         ),
         default="BOOKED",
     )
+    duration = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
