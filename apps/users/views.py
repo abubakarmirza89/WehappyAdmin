@@ -1,22 +1,17 @@
-from django.shortcuts import render
-
-# Create your views here.
 from decimal import Decimal
-
 import stripe
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
-from rest_framework import status, viewsets
-from rest_framework.authtoken.models import Token
-from rest_framework.decorators import action
-from rest_framework.generics import CreateAPIView, GenericAPIView, ListAPIView
-from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.auth import get_user_model
+from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework.generics import CreateAPIView, ListAPIView
+from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
+from rest_framework import generics, status
+from django.contrib.auth import authenticate, login
 
 from apps.users.models import Appointment, Notification, UserHistory
-
 from .serializers import (
     FeedbackSerializer,
     NotificationSerializer,
@@ -24,6 +19,7 @@ from .serializers import (
     UserAppointmentSerializer,
     UserHistorySerializer,
     UserSerializer,
+    LoginSerializer
 )
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -31,6 +27,30 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 User = get_user_model()
 
 
+class LoginAPIView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Get the email and password from the serializer data
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+
+        # Authenticate the user using Django's built-in authenticate method
+        user = authenticate(request, username=email, password=password)
+
+        # If the user is not authenticated, return an error response
+        if user is None:
+            return Response({'detail': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Log the user in by creating a session
+        login(request, user)
+
+        # You can perform additional actions here if needed before returning the response.
+
+        return Response({'detail': 'Login successful.'})
 
 
 class TherapistListViewSet(ListAPIView):
@@ -117,7 +137,8 @@ class FeedbackCreateView(CreateAPIView):
         appointment_id = self.request.data.get("appointment_id")
         appointment = Appointment.objects.get(pk=appointment_id)
 
-        serializer.save(user=self.request.user, therapist=therapist, appointment=appointment)
+        serializer.save(user=self.request.user,
+                        therapist=therapist, appointment=appointment)
 
 
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):

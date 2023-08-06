@@ -6,8 +6,8 @@ from apps.users.views import (
     TherapistListViewSet,
     UserHistoryListAPIView,
     AppointmentViewSet,
-    NotificationViewSet
-)
+    NotificationViewSet,
+    )
 
 from .webhooks import stripe_webhook
 
@@ -22,7 +22,7 @@ urlpatterns = [
     path('appointment/', AppointmentViewSet.as_view({'get': 'list',}), name='appointment-list'),
     path('appointment/<int:pk>/', AppointmentViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='appointment-detail'),
     path('notifications/', NotificationViewSet.as_view({'get': 'list'}), name='notification-list'),
-    path('notifications/<int:pk>/', NotificationViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='notification-detail'),
+    path('notifications/<int:pk>/', NotificationViewSet.as_view({'get': 'retrieve'}), name='notification-detail'),
     
     
     path("webhook/stripe/", stripe_webhook, name="stripe_webhook"),
